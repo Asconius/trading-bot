@@ -1,6 +1,7 @@
 from sqlalchemy_utc import UtcDateTime
 
 from src import db
+from src.enums.strategy_enum import StrategyEnum
 
 
 class EvaluationEntity(db.Model):
@@ -14,3 +15,4 @@ class EvaluationEntity(db.Model):
     amount_sell = db.Column(db.DECIMAL)
     distance_sell = db.Column(db.DECIMAL)
     delta_sell = db.Column(db.DECIMAL)
+    strategy = db.Column(db.Enum(StrategyEnum))

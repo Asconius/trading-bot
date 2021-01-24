@@ -10,7 +10,7 @@
     <caption>Stock</caption>
     <thead>
     <tr>
-        <th scope="col">Ticker</th>
+        <th scope="col">Symbol</th>
         <th scope="col">Isin</th>
     </tr>
     </thead>
@@ -18,7 +18,7 @@
     <tbody>
     {% for stock in stocks %}
         <tr>
-            <td><a href="{{ url_for('stock_intraday_view', ticker=stock.ticker) }}">{{ stock.ticker }}</a></td>
+            <td><a href="{{ url_for('stock_intraday_view', symbol=stock.symbol) }}">{{ stock.symbol }}</a></td>
             <td>{{ stock.isin }}</td>
         </tr>
     {% endfor %}

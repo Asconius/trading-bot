@@ -12,7 +12,7 @@
         <thead>
         <tr>
             <th scope="col">Isin</th>
-            <th scope="col">Ticker</th>
+            <th scope="col">Symbol</th>
             <th scope="col">Mode</th>
         </tr>
         </thead>
@@ -21,11 +21,11 @@
             {% for item in portfolio %}
                 <tr>
                     <td>{{ item.isin }}</td>
-                    <td>{{ item.ticker }}</td>
+                    <td>{{ item.symbol }}</td>
                     <td>{{ item.mode }}</td>
-                    <td><a href="{{ url_for('portfolio_view', operation='delete', ticker=item.ticker) }}">Delete</a>
+                    <td><a href="{{ url_for('portfolio_view', operation='delete', symbol=item.symbol) }}">Delete</a>
                     </td>
-                    <td><a href="{{ url_for('portfolio_view', operation='update', ticker=item.ticker) }}">Update</a>
+                    <td><a href="{{ url_for('portfolio_view', operation='update', symbol=item.symbol) }}">Update</a>
                     </td>
                 </tr>
             {% endfor %}
@@ -33,7 +33,7 @@
             {% for form in form.form_list %}
                 <tr>
                     <td>{{ form.form.isin }}</td>
-                    <td>{{ form.form.ticker }}</td>
+                    <td>{{ form.form.symbol }}</td>
                     <td>{{ form.form.mode }}</td>
                 </tr>
             {% endfor %}

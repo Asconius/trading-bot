@@ -4,10 +4,12 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from unittest.mock import patch, ANY
 
-import pandas as pd
 import pytz
+from numpy import std, mean
+from pandas import date_range, DataFrame
 
 from src.common.constants import ZERO
+from src.converter.intraday_entity_converter import IntradayEntityConverter
 from src.dto.attempt_dto import AttemptDTO
 from src.utils.utils import Utils
 from tests.base_test_case import BaseTestCase
@@ -49,31 +51,31 @@ class UtilsTestCase(BaseTestCase):
         number = Utils.number(ZERO, ZERO)
         self.assertEqual(number, ZERO)
 
+    def test_divide(self):
+        number = Utils.divide(Decimal('6.3'), Decimal('2.4'))
+        self.assertEqual(number, Decimal('2.625'))
+        number = Utils.divide(Decimal('9.2'), Decimal('2.9'))
+        self.assertEqual(number, Decimal('3.172413793103448275862068966'))
+        number = Utils.divide(ZERO, ZERO)
+        self.assertEqual(number, ZERO)
+
     def test_day_delta_value(self):
-        dates = pd.date_range('1/1/2000', periods=15, freq='8h')
-        tickers = ['AAA', 'BBB']
-        frame = pd.DataFrame(index=dates, columns=tickers)
+        dates = date_range('1/1/2000', periods=15, freq='8h')
+        symbols = ['AAA']
+        frame = DataFrame(index=dates, columns=symbols)
         for i in range(frame.shape[0]):
             for j in range(frame.shape[1]):
                 frame.iloc[i][j] = i + j
         frame.sort_index(inplace=True, ascending=True)
         date = frame.index.max()
-        value_aaa = Utils.day_delta_value(frame, 'AAA', date, Decimal('1'))
-        value_bbb = Utils.day_delta_value(frame, 'BBB', date, Decimal('1'))
+        value_aaa = Utils.day_delta_value(frame, date, Decimal('1'))
         self.assertEqual(value_aaa, Decimal('11'))
-        self.assertEqual(value_bbb, Decimal('12'))
-        value_aaa = Utils.day_delta_value(frame, 'AAA', date, Decimal('2'))
-        value_bbb = Utils.day_delta_value(frame, 'BBB', date, Decimal('2'))
+        value_aaa = Utils.day_delta_value(frame, date, Decimal('2'))
         self.assertEqual(value_aaa, Decimal('8'))
-        self.assertEqual(value_bbb, Decimal('9'))
-        value_aaa = Utils.day_delta_value(frame, 'AAA', date, Decimal('3'))
-        value_bbb = Utils.day_delta_value(frame, 'BBB', date, Decimal('3'))
+        value_aaa = Utils.day_delta_value(frame, date, Decimal('3'))
         self.assertEqual(value_aaa, Decimal('5'))
-        self.assertEqual(value_bbb, Decimal('6'))
-        value_aaa = Utils.day_delta_value(frame, 'AAA', date, Decimal('10'))
-        value_bbb = Utils.day_delta_value(frame, 'BBB', date, Decimal('10'))
+        value_aaa = Utils.day_delta_value(frame, date, Decimal('10'))
         self.assertTrue(math.isnan(value_aaa))
-        self.assertTrue(math.isnan(value_bbb))
 
     @patch('src.utils.utils.Utils.now')
     def test_is_today(self, now):
@@ -138,3 +140,17 @@ class UtilsTestCase(BaseTestCase):
         self.assertEqual(sendmail.call_count, 1)
         self.assertEqual(login.call_count, 1)
         self.assertEqual(starttls.call_count, 1)
+
+    def test_normalize(self):
+        intraday_list = self.create_intraday_list(decimal_list=[Decimal(i) for i in range(10)])
+        expected = IntradayEntityConverter.to_dataframe(intraday_list)
+        actual = Utils.normalize(expected)
+        standard = std(expected.values)
+        average = mean(expected.values)
+        self.assertEqual(actual.shape[0], 10)
+        for i in range(actual.shape[0]):
+            for j in range(actual.shape[1]):
+                self.assertEqual(actual.columns[j], expected.columns[j])
+                self.assertEqual(actual.index.values[i], expected.index.values[i])
+                normalized = (expected.iloc[i][j] - average) / standard
+                self.assertEqual(actual.iloc[i][j], normalized)

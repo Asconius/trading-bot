@@ -41,7 +41,7 @@ class Portfolio:
 
 
 if __name__ == '__main__':
-    tickers: Tuple[str] = Portfolio.berkshire_hathaway_wikipedia()
-    print(len(tickers))
-    for ticker in tickers:
-        print(ticker)
+    symbols: Tuple[str] = Portfolio.berkshire_hathaway_wikipedia()
+    print(len(symbols))
+    for symbol in symbols:
+        print(symbol)

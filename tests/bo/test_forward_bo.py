@@ -4,6 +4,7 @@ from json import dumps
 from unittest.mock import patch
 
 import pytz
+from pandas import date_range
 
 from src import db
 from src.bo.configuration_bo import ConfigurationBO
@@ -12,9 +13,11 @@ from src.bo.inventory_bo import InventoryBO
 from src.common.constants import ZERO
 from src.dao.evaluation_dao import EvaluationDAO
 from src.dao.forward_dao import ForwardDAO
+from src.dto.account_dto import AccountDTO
 from src.dto.attempt_dto import AttemptDTO
 from src.enums.action_enum import ActionEnum
 from src.enums.configuration_enum import ConfigurationEnum
+from src.enums.strategy_enum import StrategyEnum
 from tests.base_test_case import BaseTestCase
 
 
@@ -25,11 +28,11 @@ class ForwardBOTestCase(BaseTestCase):
         "action": "ActionEnum.SELL",
         "date": "2000-05-29 04:00:00+00:00",
         "price": "500.0000000000",
-        "ticker": "AAA"}, {
+        "symbol": "AAA"}, {
         "action": "ActionEnum.BUY",
         "date": "2000-05-29 04:00:00+00:00",
         "price": "100.0000000000",
-        "ticker": "CCC"}]
+        "symbol": "CCC"}]
 
     @classmethod
     def setUpClass(cls):
@@ -39,32 +42,39 @@ class ForwardBOTestCase(BaseTestCase):
         self.truncate_tables()
         ConfigurationBO.init()
 
+    @patch('src.bo.forward_bo.choice')
     @patch('src.utils.utils.Utils.send_mail')
     @patch('src.utils.utils.Utils.is_today')
     @patch('src.utils.utils.Utils.is_working_day_ny')
     @patch('src.utils.utils.Utils.now')
-    def test_start(self, now, is_working_day_ny, is_today, send_mail):
+    def test_start(self, now, is_working_day_ny, is_today, send_mail, choice):
         is_today.return_value = False
         is_working_day_ny.return_value = True
         now.return_value = self.OLD_DATE
-        ForwardDAO.create_buy('AAA', Decimal('100'), Decimal('10'), Decimal('8996.1'))
-        ForwardDAO.create_buy('BBB', Decimal('100'), Decimal('10'), Decimal('7992.200000000001'))
+        choice.return_value = StrategyEnum.COUNTER_CYCLICAL
+        ForwardDAO.create_buy('AAA', Decimal('100'), Decimal('10'), Decimal('8996.1'), StrategyEnum.COUNTER_CYCLICAL)
+        ForwardDAO.create_buy('BBB', Decimal('100'), Decimal('10'), Decimal('7992.200000000001'),
+                              StrategyEnum.COUNTER_CYCLICAL)
         now.return_value = self.YOUNG_DATE
-        EvaluationDAO.create(Decimal('40000'), '', AttemptDTO())
-        self.persist_intraday_frame()
+        EvaluationDAO.create(Decimal('40000'), '', AttemptDTO(), StrategyEnum.COUNTER_CYCLICAL)
+        self.persist_default_intraday()
         ForwardBO.start(['AAA', 'BBB', 'CCC'])
         send_mail.assert_called_with(dumps(self.STATISTIC_JSON, indent=4, sort_keys=True, default=str))
         self.assertEqual(send_mail.call_count, 1)
         rows = ForwardDAO.read_all()
         self.assertEqual(len(rows), 4)
         self.assert_attributes(rows[0], action=ActionEnum.BUY, cash=Decimal('8996.1'), timestamp=self.OLD_DATE,
-                               number=Decimal('10'), price=Decimal('100'), ticker='AAA')
+                               number=Decimal('10'), price=Decimal('100'), symbol='AAA',
+                               strategy=StrategyEnum.COUNTER_CYCLICAL)
         self.assert_attributes(rows[1], action=ActionEnum.BUY, cash=Decimal('7992.2'), timestamp=self.OLD_DATE,
-                               number=Decimal('10'), price=Decimal('100'), ticker='BBB')
+                               number=Decimal('10'), price=Decimal('100'), symbol='BBB',
+                               strategy=StrategyEnum.COUNTER_CYCLICAL)
         self.assert_attributes(rows[2], action=ActionEnum.SELL, cash=Decimal('8988.3'), timestamp=self.YOUNG_DATE,
-                               number=Decimal('2'), price=Decimal('500'), ticker='AAA')
+                               number=Decimal('2'), price=Decimal('500'), symbol='AAA',
+                               strategy=StrategyEnum.COUNTER_CYCLICAL)
         self.assert_attributes(rows[3], action=ActionEnum.BUY, cash=Decimal('7984.4'), timestamp=self.YOUNG_DATE,
-                               number=Decimal('10'), price=Decimal('100'), ticker='CCC')
+                               number=Decimal('10'), price=Decimal('100'), symbol='CCC',
+                               strategy=StrategyEnum.COUNTER_CYCLICAL)
 
     @patch('src.utils.utils.Utils.now')
     def test_init(self, now):
@@ -72,18 +82,18 @@ class ForwardBOTestCase(BaseTestCase):
         numbers = (Decimal('10'), Decimal('10'), Decimal('10'), Decimal('5'), Decimal('10'), Decimal('10'))
         multipliers = (Decimal('-1'), Decimal('-1'), Decimal('-1'), Decimal('1'), Decimal('-1'), Decimal('1'))
         now.return_value = self.YOUNG_DATE + timedelta(seconds=1)
-        ForwardDAO.create_buy('AAA', prices[0], numbers[0], Decimal('9000'))
+        ForwardDAO.create_buy('AAA', prices[0], numbers[0], Decimal('9000'), StrategyEnum.COUNTER_CYCLICAL)
         now.return_value = self.YOUNG_DATE + timedelta(seconds=2)
-        ForwardDAO.create_buy('AAA', prices[1], numbers[1], Decimal('8000'))
+        ForwardDAO.create_buy('AAA', prices[1], numbers[1], Decimal('8000'), StrategyEnum.COUNTER_CYCLICAL)
         now.return_value = self.YOUNG_DATE + timedelta(seconds=3)
-        ForwardDAO.create_buy('BBB', prices[2], numbers[2], Decimal('7000'))
+        ForwardDAO.create_buy('BBB', prices[2], numbers[2], Decimal('7000'), StrategyEnum.COUNTER_CYCLICAL)
         now.return_value = self.YOUNG_DATE + timedelta(seconds=4)
-        ForwardDAO.create_sell('BBB', prices[3], numbers[3], Decimal('7500'))
+        ForwardDAO.create_sell('BBB', prices[3], numbers[3], Decimal('7500'), StrategyEnum.COUNTER_CYCLICAL)
         now.return_value = self.YOUNG_DATE + timedelta(seconds=5)
-        ForwardDAO.create_buy('CCC', prices[4], numbers[4], Decimal('6500'))
+        ForwardDAO.create_buy('CCC', prices[4], numbers[4], Decimal('6500'), StrategyEnum.COUNTER_CYCLICAL)
         now.return_value = self.YOUNG_DATE + timedelta(seconds=6)
-        ForwardDAO.create_sell('CCC', prices[5], numbers[5], Decimal('7500'))
-        inventory, cash, fee = ForwardBO.init()
+        ForwardDAO.create_sell('CCC', prices[5], numbers[5], Decimal('7500'), StrategyEnum.COUNTER_CYCLICAL)
+        inventory, cash, fee = ForwardBO.init(StrategyEnum.COUNTER_CYCLICAL)
         estimated = ConfigurationEnum.FORWARD_CASH.val
         for i in range(len(prices)):
             estimated += prices[i] * numbers[i] * multipliers[i] - ConfigurationEnum.FORWARD_FEE.val
@@ -117,3 +127,41 @@ class ForwardBOTestCase(BaseTestCase):
         estimated = inventory['AAA'].value() + inventory['BBB'].value() + inventory['CCC'].value()
         self.assertEqual(total_value, estimated)
         self.assertEqual(total, estimated + ConfigurationEnum.FORWARD_CASH.val)
+
+    @patch('src.utils.utils.Utils.now')
+    def test_group_by_strategy(self, now):
+        dates = date_range('1/1/2000', periods=2)
+        for i in range(len(dates)):
+            now.return_value = self.create_datetime(dates[i])
+            ForwardDAO.create_buy('AAA', Decimal(i), Decimal(i), Decimal(i), StrategyEnum.COUNTER_CYCLICAL)
+            now.return_value = self.create_datetime(dates[i] + timedelta(seconds=2))
+            ForwardDAO.create_buy('AAA', Decimal(i), Decimal(i), Decimal(i), StrategyEnum.VOLUME_TRADING)
+        grouped = ForwardBO.group_by_strategy()
+        self.assertEqual(len(grouped), 2)
+        for group in grouped.values():
+            self.assertEqual(len(group), 2)
+        for evaluation in grouped[StrategyEnum.COUNTER_CYCLICAL]:
+            self.assertEqual(evaluation.strategy, StrategyEnum.COUNTER_CYCLICAL)
+        for evaluation in grouped[StrategyEnum.VOLUME_TRADING]:
+            self.assertEqual(evaluation.strategy, StrategyEnum.VOLUME_TRADING)
+
+    @patch('src.utils.utils.Utils.now')
+    def test_get_account(self, now):
+        dates = date_range('1/1/2000', periods=10)
+        for i in range(len(dates)):
+            date_young = self.create_datetime(dates[i] + timedelta(seconds=2))
+            date_old = self.create_datetime(dates[i])
+            self.persist_intraday('AAA', date_young, Decimal(i), Decimal(i), Decimal(i), Decimal(i + 1), Decimal(i))
+            now.return_value = date_young
+            ForwardDAO.create_buy('AAA', Decimal(i + 1), Decimal(i + 1), Decimal(i + 1), StrategyEnum.COUNTER_CYCLICAL)
+            self.persist_intraday('AAA', date_old, Decimal(i), Decimal(i), Decimal(i), Decimal(i + 2), Decimal(i))
+            now.return_value = date_old
+            ForwardDAO.create_buy('AAA', Decimal(i + 2), Decimal(i + 2), Decimal(i + 2), StrategyEnum.VOLUME_TRADING)
+        accounts = ForwardBO.get_accounts()
+        self.assertEqual(len(accounts), 2)
+        for account in accounts.values():
+            self.assertIsInstance(account, AccountDTO)
+        account = accounts[StrategyEnum.COUNTER_CYCLICAL]
+        self.assert_attributes(account, cash=Decimal('9576'), total_value=Decimal('550'), total=Decimal('10126'))
+        account = accounts[StrategyEnum.VOLUME_TRADING]
+        self.assert_attributes(account, cash=Decimal('9456'), total_value=Decimal('650'), total=Decimal('10106'))

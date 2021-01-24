@@ -13,24 +13,24 @@ from src.utils.utils import Utils
 class PortfolioDAO(BaseDAO):
 
     @classmethod
-    def create(cls, ticker: str, mode: ModeEnum) -> NoReturn:
+    def create(cls, symbol: str, mode: ModeEnum) -> NoReturn:
         portfolio: PortfolioEntity = PortfolioEntity()
-        Utils.set_attributes(portfolio, ticker=ticker, mode=mode)
+        Utils.set_attributes(portfolio, symbol=symbol, mode=mode)
         cls.persist(portfolio)
 
     @staticmethod
     def read() -> List[Any]:
-        return db.session.query(PortfolioEntity.ticker, PortfolioEntity.mode, StockEntity.isin).join(
-            StockEntity, StockEntity.ticker == PortfolioEntity.ticker).all()
+        return db.session.query(PortfolioEntity.symbol, PortfolioEntity.mode, StockEntity.isin).join(
+            StockEntity, StockEntity.symbol == PortfolioEntity.symbol).all()
 
     @staticmethod
-    def read_filter_by_ticker_isin(ticker: str) -> Any:
-        return db.session.query(PortfolioEntity.ticker, PortfolioEntity.mode, StockEntity.isin).filter(
-            StockEntity.ticker == ticker).join(StockEntity, StockEntity.ticker == PortfolioEntity.ticker).first()
+    def read_filter_by_symbol_isin(symbol: str) -> Any:
+        return db.session.query(PortfolioEntity.symbol, PortfolioEntity.mode, StockEntity.isin).filter(
+            StockEntity.symbol == symbol).join(StockEntity, StockEntity.symbol == PortfolioEntity.symbol).first()
 
     @staticmethod
-    def read_filter_by_ticker(ticker: str) -> PortfolioEntity:
-        return PortfolioEntity.query.filter_by(ticker=ticker).first()
+    def read_filter_by_symbol(symbol: str) -> PortfolioEntity:
+        return PortfolioEntity.query.filter_by(symbol=symbol).first()
 
     @staticmethod
     def read_filter_by_mode(mode: ModeEnum) -> List[PortfolioEntity]:
@@ -40,15 +40,15 @@ class PortfolioDAO(BaseDAO):
             return []
 
     @classmethod
-    def update(cls, ticker: str, mode: ModeEnum) -> NoReturn:
-        portfolio = cls.read_filter_by_ticker(ticker)
+    def update(cls, symbol: str, mode: ModeEnum) -> NoReturn:
+        portfolio = cls.read_filter_by_symbol(symbol)
         if portfolio is None:
-            cls.create(ticker, mode)
+            cls.create(symbol, mode)
         else:
             portfolio.mode = mode
             cls.commit()
 
     @classmethod
-    def delete(cls, ticker: str) -> NoReturn:
-        PortfolioEntity.query.filter(PortfolioEntity.ticker == ticker).delete()
+    def delete(cls, symbol: str) -> NoReturn:
+        PortfolioEntity.query.filter(PortfolioEntity.symbol == symbol).delete()
         cls.commit()

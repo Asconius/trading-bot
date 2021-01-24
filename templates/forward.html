@@ -7,70 +7,74 @@
 <body>
 <a href="{{ url_for('main_view') }}">Main</a>
 <br>
-<table>
-    <caption>Broker</caption>
-    <thead>
-    <tr>
-        <th scope="col">Cash</th>
-        <th scope="col">Value</th>
-        <th scope="col">Total</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-        <td>{{ cash }}</td>
-        <td>{{ total_value }}</td>
-        <td>{{ total }}</td>
-    </tr>
-    </tbody>
-</table>
-<br>
-<table>
-    <caption>Inventory</caption>
-    <thead>
-    <tr>
-        <th scope="col">Ticker</th>
-        <th scope="col">Number</th>
-        <th scope="col">Price</th>
-        <th scope="col">Value</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for ticker, entry in inventory.items() %}
+{% for strategy, account in accounts.items() %}
+    <table>
+        <caption>{{ strategy.identifier }}</caption>
+        <thead>
         <tr>
-            <td>{{ ticker }}</td>
-            <td>{{ entry.price }}</td>
-            <td>{{ entry.number }}</td>
-            <td>{{ entry.value() }}</td>
+            <th scope="col">Cash</th>
+            <th scope="col">Value</th>
+            <th scope="col">Total</th>
         </tr>
-    {% endfor %}
-    </tbody>
-</table>
-<br>
-<table>
-    <caption>Forward</caption>
-    <thead>
-    <tr>
-        <th scope="col">Date</th>
-        <th scope="col">Ticker</th>
-        <th scope="col">Action</th>
-        <th scope="col">Price</th>
-        <th scope="col">Number</th>
-        <th scope="col">Cash</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for forward in forwards %}
+        </thead>
+        <tbody>
         <tr>
-            <td>{{ forward.timestamp }}</td>
-            <td>{{ forward.ticker }}</td>
-            <td>{{ forward.action }}</td>
-            <td>{{ forward.price }}</td>
-            <td>{{ forward.number }}</td>
-            <td>{{ forward.cash }}</td>
+            <td>{{ account.cash }}</td>
+            <td>{{ account.total_value }}</td>
+            <td>{{ account.total }}</td>
         </tr>
-    {% endfor %}
-    </tbody>
-</table>
+        </tbody>
+    </table>
+    <br>
+    <table>
+        <caption>Inventory</caption>
+        <thead>
+        <tr>
+            <th scope="col">Symbol</th>
+            <th scope="col">Number</th>
+            <th scope="col">Price</th>
+            <th scope="col">Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for symbol, entry in account.inventory.items() %}
+            <tr>
+                <td>{{ symbol }}</td>
+                <td>{{ entry.price }}</td>
+                <td>{{ entry.number }}</td>
+                <td>{{ entry.value() }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endfor %}
+<br>
+{% for strategy, forwards in groups.items() %}
+    <table>
+        <caption>{{ strategy.identifier }}</caption>
+        <thead>
+        <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Symbol</th>
+            <th scope="col">Action</th>
+            <th scope="col">Price</th>
+            <th scope="col">Number</th>
+            <th scope="col">Cash</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for forward in forwards %}
+            <tr>
+                <td>{{ forward.timestamp }}</td>
+                <td>{{ forward.symbol }}</td>
+                <td>{{ forward.action }}</td>
+                <td>{{ forward.price }}</td>
+                <td>{{ forward.number }}</td>
+                <td>{{ forward.cash }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endfor %}
 </body>
 </html>

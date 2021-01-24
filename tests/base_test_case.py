@@ -1,13 +1,15 @@
 import copy
 from datetime import datetime
 from decimal import Decimal
+from typing import Union
 from unittest import TestCase
 
-from numpy import full, hstack
+from numpy import full
 from pandas import DataFrame, date_range
 from pytz import timezone
 
-from src.common.constants import UTC, US_EASTERN, NAN
+from src import Utils
+from src.common.constants import US_EASTERN, NAN
 from src.dao.base_dao import BaseDAO
 from src.dao.intraday_dao import IntradayDAO
 from src.entity.configuration_entity import ConfigurationEntity
@@ -20,21 +22,6 @@ from src.entity.stock_entity import StockEntity
 
 class BaseTestCase(TestCase):
 
-    @staticmethod
-    def create_table_frame() -> DataFrame:
-        dates = date_range('1/1/2000', periods=150, tz=UTC)
-        prices_aaa = full((150, 1), Decimal(500))
-        prices_bbb = copy.copy(prices_aaa)
-        prices_ccc = copy.copy(prices_aaa)
-        prices_aaa[30:60] = prices_aaa[90:120] = prices_ccc[0:30] = prices_ccc[60:90] = prices_ccc[120:150] = Decimal(
-            100)
-        prices_bbb[0:30] = NAN
-        tickers = ['AAA', 'BBB', 'CCC']
-        prices = hstack((prices_aaa, prices_bbb, prices_ccc))
-        frame = DataFrame(prices, index=dates, columns=tickers)
-        frame.sort_index(inplace=True, ascending=True)
-        return frame
-
     def assert_attributes(self, assertable, **kwargs):
         for key, value in kwargs.items():
             self.assertEqual(getattr(assertable, key), value)
@@ -44,11 +31,11 @@ class BaseTestCase(TestCase):
             self.assertEqual(value, assertable[key])
 
     @classmethod
-    def persist_intraday(cls, ticker, date, o, high, low, close, volume):
-        cls.__persist_get_intraday(date.replace(tzinfo=None), full((1, 5), [o, high, low, close, volume]), ticker)
+    def persist_intraday(cls, symbol, date, o, high, low, close, volume):
+        cls.__persist_get_intraday(date.replace(tzinfo=None), full((1, 5), [o, high, low, close, volume]), symbol)
 
     @classmethod
-    def persist_intraday_frame(cls):
+    def persist_default_intraday(cls):
         table_aaa = full((150, 5), Decimal(500))
         table_ccc = copy.copy(table_aaa)
         table_aaa[30:60] = table_aaa[90:120] = table_ccc[0:30] = table_ccc[60:90] = table_ccc[120:150] = Decimal(100)
@@ -59,11 +46,11 @@ class BaseTestCase(TestCase):
             cls.__persist_get_intraday(value['start'], value['data'], key)
 
     @classmethod
-    def __persist_get_intraday(cls, start, data, ticker):
+    def __persist_get_intraday(cls, start, data, symbol):
         frame, meta_data = cls.get_intraday(start, data)
         frame = frame.reset_index()
         for index, row in frame.iterrows():
-            intraday = IntradayDAO.init(row, ticker, meta_data['6. Time Zone'])
+            intraday = IntradayDAO.init(row, symbol, meta_data['6. Time Zone'])
             BaseDAO.persist(intraday)
 
     @staticmethod
@@ -77,12 +64,12 @@ class BaseTestCase(TestCase):
         return frame, meta_data
 
     @staticmethod
-    def get_intraday_csv(ticker: str):
+    def get_intraday_csv(symbol: str):
         intraday_list = [('time', 'open', 'high', 'low', 'close', 'volume')]
         decimal_list = full((10,), Decimal(500))
         dates = date_range(end='2020-02-02', periods=10).to_pydatetime().tolist()
         for date, decimal in zip(dates, decimal_list):
-            intraday_list.append((date, decimal, decimal, decimal, decimal, decimal, ticker))
+            intraday_list.append((date, decimal, decimal, decimal, decimal, decimal, symbol))
         return intraday_list, None
 
     @staticmethod
@@ -95,5 +82,41 @@ class BaseTestCase(TestCase):
         ConfigurationEntity.query.delete()
 
     @staticmethod
-    def create_datetime(date: str, tz: str = US_EASTERN):
-        return timezone(tz).localize(datetime.fromisoformat(date))
+    def create_datetime(date: Union[str, datetime], tz: str = US_EASTERN):
+        if isinstance(date, str):
+            return timezone(tz).localize(datetime.fromisoformat(date))
+        elif isinstance(date, datetime):
+            return timezone(tz).localize(date)
+        else:
+            raise AttributeError
+
+    @classmethod
+    def create_default_intraday_list(cls):
+        aaa = full(150, Decimal(500))
+        bbb = copy.copy(aaa)
+        ccc = copy.copy(aaa)
+        aaa[30:60] = aaa[90:120] = ccc[0:30] = ccc[60:90] = ccc[120:150] = Decimal(100)
+        bbb[0:30] = NAN
+        prices_aaa = cls.create_intraday_list(decimal_list=aaa, symbol='AAA')
+        prices_bbb = cls.create_intraday_list(decimal_list=bbb, symbol='BBB')
+        prices_ccc = cls.create_intraday_list(decimal_list=ccc, symbol='CCC')
+        return prices_aaa + prices_bbb + prices_ccc
+
+    @staticmethod
+    def create_intraday_list(symbol_list=None, decimal_list=None, size=10, symbol='AAA'):
+        if symbol_list is not None:
+            size = len(symbol_list)
+        if decimal_list is not None:
+            size = len(decimal_list)
+        intraday_list = []
+        if symbol_list is None:
+            symbol_list = [symbol for _ in range(size)]
+        if decimal_list is None:
+            decimal_list = [Decimal(i) for i in range(size)]
+        dates = date_range(end='2020-02-02', periods=size).to_pydatetime().tolist()
+        for date, symbol, decimal in zip(dates, symbol_list, decimal_list):
+            intraday = IntradayEntity()
+            Utils.set_attributes(intraday, date=date, open=decimal, high=decimal, low=decimal, close=decimal,
+                                 volume=decimal, symbol=symbol)
+            intraday_list.append(intraday)
+        return intraday_list

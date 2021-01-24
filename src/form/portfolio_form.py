@@ -14,9 +14,9 @@ class PortfolioForm(Form):
     submit = SubmitField('Submit')
 
     @staticmethod
-    def append_form(isin: str, ticker: str, mode: Optional[ModeEnum], form: PortfolioForm) -> NoReturn:
+    def append_form(isin: str, symbol: str, mode: Optional[ModeEnum], form: PortfolioForm) -> NoReturn:
         field_form: PortfolioFieldForm = PortfolioFieldForm(request.form)
         field_form.isin = isin
-        field_form.ticker = ticker
+        field_form.symbol = symbol
         field_form.mode = mode
         form.form_list.append_entry(field_form)

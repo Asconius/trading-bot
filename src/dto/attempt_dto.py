@@ -5,6 +5,7 @@ from typing import NoReturn
 
 
 class AttemptDTO:
+
     def __init__(self, amount_buy: Decimal = Decimal('1000'), distance_buy: Decimal = Decimal('30'),
                  delta_buy: Decimal = Decimal('1.5'), amount_sell: Decimal = Decimal('1000'),
                  distance_sell: Decimal = Decimal('30'), delta_sell: Decimal = Decimal('1.5')) -> NoReturn:

@@ -5,12 +5,11 @@ from flask import render_template, make_response, request, jsonify, redirect, ur
 
 from src import app, db
 from src.bo.configuration_bo import ConfigurationBO
+from src.bo.evaluation_bo import EvaluationBO
 from src.bo.forward_bo import ForwardBO
-from src.bo.intraday_bo import IntradayBO
 from src.bo.portfolio_bo import PortfolioBO
 from src.common.process_manager import ProcessManager
-from src.dao.evaluation_dao import EvaluationDAO
-from src.dao.forward_dao import ForwardDAO
+from src.converter.intraday_entity_converter import IntradayEntityConverter
 from src.dao.intraday_dao import IntradayDAO
 from src.dao.stock_dao import StockDAO
 from src.entity.configuration_entity import ConfigurationEntity
@@ -41,29 +40,27 @@ def stock_view() -> Response:
     return make_response(render_template('stock.html', stocks=StockDAO.read_all()), STATUS_CODE_OK)
 
 
-@app.route('/stock/intraday/<ticker>')
-def stock_intraday_view(ticker: str) -> Response:
-    return make_response(render_template('stock-intraday.html', intradays=IntradayDAO.read_filter_by_ticker(ticker)),
+@app.route('/stock/intraday/<symbol>')
+def stock_intraday_view(symbol: str) -> Response:
+    return make_response(render_template('stock-intraday.html', intradays=IntradayDAO.read_filter_by_symbol(symbol)),
                          STATUS_CODE_OK)
 
 
 @app.route('/intraday')
 def intraday_view() -> Response:
-    return make_response(render_template('intraday.html', tables=[IntradayDAO.dataframe_ticker().to_html(
-        classes='data', header='true')]), STATUS_CODE_OK)
+    return make_response(render_template('intraday.html', tables=[IntradayEntityConverter.to_html()]), STATUS_CODE_OK)
 
 
 @app.route('/evaluation')
 def evaluation_view() -> Response:
-    return make_response(render_template('evaluation.html', evaluations=EvaluationDAO.read_all()), STATUS_CODE_OK)
+    return make_response(render_template('evaluation.html', groups=EvaluationBO.group_by_strategy()),
+                         STATUS_CODE_OK)
 
 
 @app.route('/forward')
 def forward_view() -> Response:
-    inventory, cash, fee = ForwardBO.init()
-    inventory, total_value, total = ForwardBO.update(inventory, cash)
-    return make_response(render_template('forward.html', forwards=ForwardDAO.read_all(), inventory=inventory, cash=cash,
-                                         total_value=total_value, total=total), STATUS_CODE_OK)
+    return make_response(render_template('forward.html', groups=ForwardBO.group_by_strategy(),
+                                         accounts=ForwardBO.get_accounts()), STATUS_CODE_OK)
 
 
 @app.route('/process')
@@ -91,7 +88,7 @@ def process_stop_view(process_name: str) -> Response:
 @app.route('/import/<path:data>', methods=[GET, POST])
 def import_view(data: str) -> Response:
     if data == 'intraday':
-        IntradayBO.from_file(request)
+        IntradayEntityConverter.from_file(request)
     return make_response(render_template('import.html'), STATUS_CODE_OK)
 
 
@@ -99,7 +96,7 @@ def import_view(data: str) -> Response:
 @app.route('/export/<path:data>')
 def export_view(data: str) -> Response:
     if data == 'intraday':
-        content = IntradayBO.to_file()
+        content = IntradayEntityConverter.to_file()
         return make_response(jsonify(content), STATUS_CODE_OK)
     return make_response(render_template('export.html'), STATUS_CODE_OK)
 
@@ -128,10 +125,10 @@ def configuration_view(operation: str, identifier: str) -> Response:
                                          operation=operation), STATUS_CODE_OK)
 
 
-@app.route('/portfolio', defaults={'operation': 'read', 'ticker': ''}, methods=[GET, POST])
-@app.route('/portfolio/<path:operation>', defaults={'ticker': ''}, methods=[GET, POST])
-@app.route('/portfolio/<path:operation>/<path:ticker>', methods=[GET, POST])
-def portfolio_view(operation: str, ticker: str) -> Response:
+@app.route('/portfolio', defaults={'operation': 'read', 'symbol': ''}, methods=[GET, POST])
+@app.route('/portfolio/<path:operation>', defaults={'symbol': ''}, methods=[GET, POST])
+@app.route('/portfolio/<path:operation>/<path:symbol>', methods=[GET, POST])
+def portfolio_view(operation: str, symbol: str) -> Response:
     form: PortfolioForm = PortfolioForm(request.form)
     portfolio: List[Any] = []
     if request.method == GET:
@@ -140,14 +137,14 @@ def portfolio_view(operation: str, ticker: str) -> Response:
         elif operation == 'read':
             portfolio = PortfolioBO.read()
         elif operation == 'update':
-            entity: Any = PortfolioBO.read_filter_by_ticker_isin(ticker)
-            PortfolioForm.append_form(entity.isin, entity.ticker, entity.mode, form)
+            entity: Any = PortfolioBO.read_filter_by_symbol_isin(symbol)
+            PortfolioForm.append_form(entity.isin, entity.symbol, entity.mode, form)
         elif operation == 'delete':
-            PortfolioBO.delete(ticker)
+            PortfolioBO.delete(symbol)
             return redirect(url_for('portfolio_view'))
     elif request.method == POST and form.validate():
         for entry in form.form_list.entries:
-            PortfolioBO.update(entry.form.ticker.data.strip(), ModeEnum[entry.form.mode.data[9:]])
+            PortfolioBO.update(entry.form.symbol.data.strip(), ModeEnum[entry.form.mode.data[9:]])
         return redirect(url_for('portfolio_view'))
     return make_response(render_template('portfolio.html', form=form, portfolio=portfolio, operation=operation),
                          STATUS_CODE_OK)

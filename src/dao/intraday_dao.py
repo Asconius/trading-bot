@@ -5,18 +5,15 @@ from decimal import Decimal
 from time import sleep
 from typing import List, Tuple, Any, NoReturn, Final, Union
 
-import pandas as pd
 import pytz
 from alpha_vantage.timeseries import TimeSeries
-from pandas import DataFrame, Series
+from pandas import Series
 from sqlalchemy import func
 
 from src import db
-from src.common.constants import NAN, US_EASTERN, REQUEST_SLEEP
+from src.common.constants import US_EASTERN, REQUEST_SLEEP
 from src.dao.base_dao import BaseDAO
-from src.dao.stock_dao import StockDAO
 from src.entity.intraday_entity import IntradayEntity
-from src.entity.stock_entity import StockEntity
 from src.utils.utils import Utils
 
 
@@ -27,19 +24,19 @@ class IntradayDAO(BaseDAO):
     INTRADAY_EXTENDED_COLUMN: Tuple[int] = tuple(range(6))
 
     @classmethod
-    def create_ticker(cls, ticker: str) -> NoReturn:
+    def create_symbol(cls, symbol: str) -> NoReturn:
         try:
             time_series = TimeSeries(output_format='pandas')
-            frame, meta_data = time_series.get_intraday(symbol=ticker.replace('.', '-'), outputsize='full')
+            frame, meta_data = time_series.get_intraday(symbol=symbol.replace('.', '-'), outputsize='full')
             frame = frame.reset_index()
             for index, row in frame.iterrows():
-                intraday = cls.init(row, ticker, meta_data['6. Time Zone'])
+                intraday = cls.init(row, symbol, meta_data['6. Time Zone'])
                 cls.persist(intraday)
         except ValueError as e:
             logging.exception(e)
 
     @classmethod
-    def create_ticker_extended(cls, symbol: str) -> NoReturn:
+    def create_symbol_extended(cls, symbol: str) -> NoReturn:
         time_series = TimeSeries(output_format='csv')
         for year in range(cls.YEAR_RANGE):
             for month in range(cls.MONTH_RANGE):
@@ -65,12 +62,12 @@ class IntradayDAO(BaseDAO):
             intraday: IntradayEntity = IntradayEntity()
             Utils.set_attributes(intraday, date=datetime.fromisoformat(row['date']), open=Decimal(row['open']),
                                  high=Decimal(row['high']), low=Decimal(row['low']), close=Decimal(row['close']),
-                                 volume=Decimal(row['volume']), ticker=row['ticker'])
+                                 volume=Decimal(row['volume']), symbol=row['symbol'])
             cls.persist(intraday)
 
     @staticmethod
     def read(portfolio: List[str]) -> List[IntradayEntity]:
-        return IntradayEntity.query.filter(IntradayEntity.ticker.in_(portfolio)).order_by(
+        return IntradayEntity.query.filter(IntradayEntity.symbol.in_(portfolio)).order_by(
             IntradayEntity.date.asc()).all()
 
     @staticmethod
@@ -78,50 +75,32 @@ class IntradayDAO(BaseDAO):
         return IntradayEntity.query.order_by(IntradayEntity.date.asc()).all()
 
     @staticmethod
-    def read_filter_by_ticker(ticker: str) -> List[IntradayEntity]:
-        return IntradayEntity.query.filter_by(ticker=ticker).order_by(IntradayEntity.date.desc()).all()
+    def read_filter_by_symbol(symbol: str) -> List[IntradayEntity]:
+        return IntradayEntity.query.filter_by(symbol=symbol).order_by(IntradayEntity.date.desc()).all()
 
     @staticmethod
-    def read_filter_by_ticker_first(ticker: str) -> IntradayEntity:
-        return IntradayEntity.query.filter_by(ticker=ticker).order_by(IntradayEntity.date.desc()).first()
+    def read_filter_by_symbol_first(symbol: str) -> IntradayEntity:
+        return IntradayEntity.query.filter_by(symbol=symbol).order_by(IntradayEntity.date.desc()).first()
 
     @staticmethod
     def read_latest_date() -> List[List[Any]]:
-        return db.session.query(func.max(IntradayEntity.date), IntradayEntity.ticker).group_by(
-            IntradayEntity.ticker).all()
+        return db.session.query(func.max(IntradayEntity.date), IntradayEntity.symbol).group_by(
+            IntradayEntity.symbol).all()
 
     @classmethod
-    def dataframe_ticker(cls) -> DataFrame:
-        rows: List[StockEntity] = StockDAO.read_ticker()
-        tickers: List[str] = list(map(lambda r: r.ticker, rows))
-        return cls.dataframe_portfolio(tickers)
-
-    @classmethod
-    def dataframe_portfolio(cls, portfolio: List[str]) -> DataFrame:
-        rows: List[IntradayEntity] = cls.read(portfolio)
-        return cls.dataframe(rows)
-
-    @classmethod
-    def dataframe_group(cls, group: Tuple[Tuple[str]]) -> List[DataFrame]:
-        return list(map(lambda g: cls.dataframe_portfolio(g), group))
+    def intraday_list_group(cls, group: Tuple[Tuple[str]]) -> List[List[IntradayEntity]]:
+        return list(map(lambda g: cls.read(g), group))
 
     @staticmethod
-    def dataframe(rows: List[IntradayEntity]) -> DataFrame:
-        frame: DataFrame = pd.DataFrame()
-        for row in rows:
-            frame.at[row.date, row.ticker] = Decimal(row.close)
-        return frame.fillna(NAN)
-
-    @staticmethod
-    def init(row: Series, ticker: str, timezone: str,
+    def init(row: Series, symbol: str, timezone: str,
              column: Tuple[Union[int, str]] = INTRADAY_COLUMN) -> IntradayEntity:
         intraday: IntradayEntity = IntradayEntity()
         Utils.set_attributes(intraday,
                              date=pytz.timezone(timezone).localize(datetime.fromisoformat(str(row[column[0]]))),
                              open=Decimal(row[column[1]]), high=Decimal(row[column[2]]), low=Decimal(row[column[3]]),
-                             close=Decimal(row[column[4]]), volume=Decimal(row[column[5]]), ticker=ticker)
+                             close=Decimal(row[column[4]]), volume=Decimal(row[column[5]]), symbol=symbol)
         return intraday
 
 
 if __name__ == '__main__':
-    IntradayDAO.create_ticker('aapl')
+    IntradayDAO.create_symbol('aaa')

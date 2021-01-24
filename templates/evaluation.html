@@ -6,37 +6,39 @@
 </head>
 <body>
 <a href="{{ url_for('main_view') }}">Main</a>
-<table>
-    <caption>Evaluation</caption>
-    <thead>
-    <tr>
-        <th scope="col">Timestamp</th>
-        <th scope="col">Sum</th>
-        <th scope="col">Funds</th>
-        <th scope="col">Amountbuy</th>
-        <th scope="col">Distancebuy</th>
-        <th scope="col">Deltabuy</th>
-        <th scope="col">Amountsell</th>
-        <th scope="col">Distancesell</th>
-        <th scope="col">Deltasell</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    {% for evaluation in evaluations %}
+{% for strategy, evaluations in groups.items() %}
+    <table>
+        <caption>{{ strategy.identifier }}</caption>
+        <thead>
         <tr>
-            <td>{{ evaluation.timestamp }}</td>
-            <td>{{ evaluation.sum }}</td>
-            <td>{{ evaluation.funds }}</td>
-            <td>{{ evaluation.amount_buy }}</td>
-            <td>{{ evaluation.distance_buy }}</td>
-            <td>{{ evaluation.delta_buy }}</td>
-            <td>{{ evaluation.amount_sell }}</td>
-            <td>{{ evaluation.distance_sell }}</td>
-            <td>{{ evaluation.delta_sell }}</td>
+            <th scope="col">Timestamp</th>
+            <th scope="col">Sum</th>
+            <th scope="col">Funds</th>
+            <th scope="col">Amountbuy</th>
+            <th scope="col">Distancebuy</th>
+            <th scope="col">Deltabuy</th>
+            <th scope="col">Amountsell</th>
+            <th scope="col">Distancesell</th>
+            <th scope="col">Deltasell</th>
         </tr>
-    {% endfor %}
-    </tbody>
-</table>
+        </thead>
+
+        <tbody>
+        {% for evaluation in evaluations %}
+            <tr>
+                <td>{{ evaluation.timestamp }}</td>
+                <td>{{ evaluation.sum }}</td>
+                <td>{{ evaluation.funds }}</td>
+                <td>{{ evaluation.amount_buy }}</td>
+                <td>{{ evaluation.distance_buy }}</td>
+                <td>{{ evaluation.delta_buy }}</td>
+                <td>{{ evaluation.amount_sell }}</td>
+                <td>{{ evaluation.distance_sell }}</td>
+                <td>{{ evaluation.delta_sell }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endfor %}
 </body>
 </html>

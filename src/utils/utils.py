@@ -5,10 +5,11 @@ from datetime import timedelta, datetime
 from decimal import Decimal, ROUND_DOWN, ExtendedContext
 from email.mime.text import MIMEText
 from smtplib import SMTP
-from typing import Iterable, List, Iterator, Tuple, Optional, TypeVar, Sequence, NoReturn
+from typing import Iterable, List, Iterator, Tuple, Optional, TypeVar, Sequence, NoReturn, Union
 
 import pandas as pd
 import pytz
+from numpy import ndarray
 from pandas import DataFrame
 from workalendar.usa import NewYork
 
@@ -18,6 +19,7 @@ T = TypeVar('T')
 
 
 class Utils:
+
     @staticmethod
     def valid(start: Decimal, value: Decimal, stop: Decimal) -> bool:
         return start <= value <= stop
@@ -40,7 +42,12 @@ class Utils:
         return ZERO if denominator == ZERO else ExtendedContext.divide_int(numerator, denominator)
 
     @staticmethod
-    def day_delta_value(frame: DataFrame, column: str, date: datetime, delta: Decimal) -> Decimal:
+    def divide(numerator: Union[Decimal, ndarray], denominator: Union[Decimal, ndarray]) -> Union[Decimal, ndarray]:
+        return ZERO if denominator == ZERO else numerator / denominator
+
+    @staticmethod
+    def day_delta_value(frame: DataFrame, date: datetime, delta: Decimal) -> Decimal:
+        column: str = frame.columns[0]
         interval_end = date - timedelta(days=float(delta))
         interval_start = date - timedelta(days=float(delta) + 7)
         interval_date = frame.loc[interval_start:interval_end, column].index.max()
@@ -61,7 +68,7 @@ class Utils:
         return NewYork().is_working_day(cls.now().astimezone(pytz.timezone(US_EASTERN)))
 
     @staticmethod
-    def first(sequence: Sequence[T]) -> T:
+    def first(sequence: Sequence[T]) -> Optional[T]:
         return None if len(sequence) == 0 else sequence[0]
 
     @staticmethod
@@ -90,6 +97,14 @@ class Utils:
         smtp.starttls()
         smtp.login(from_address, password)
         smtp.sendmail(from_address, to_address, msg.as_string())
+
+    @classmethod
+    def normalize(cls, frame: DataFrame) -> DataFrame:
+        data: ndarray = frame.values
+        data_mean: ndarray = data.mean(axis=0)
+        data_std: ndarray = data.std(axis=0)
+        features: ndarray = cls.divide(data - data_mean, data_std)
+        return DataFrame(features, index=frame.index, columns=frame.columns)
 
 
 if __name__ == '__main__':

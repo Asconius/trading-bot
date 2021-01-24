@@ -10,8 +10,8 @@ class StockDAO(BaseDAO):
 
     @classmethod
     def create_if_not_exists(cls, portfolio: Tuple[str]) -> NoReturn:
-        rows: List[StockEntity] = StockEntity.query.with_entities(StockEntity.ticker).filter(
-            StockEntity.ticker.in_(portfolio)).all()
+        rows: List[StockEntity] = StockEntity.query.with_entities(StockEntity.symbol).filter(
+            StockEntity.symbol.in_(portfolio)).all()
         if len(rows) < len(portfolio):
             cls.update(portfolio)
 
@@ -20,12 +20,12 @@ class StockDAO(BaseDAO):
         return StockEntity.query.all()
 
     @staticmethod
-    def read_ticker() -> List[StockEntity]:
-        return StockEntity.query.with_entities(StockEntity.ticker).all()
+    def read_symbol() -> List[StockEntity]:
+        return StockEntity.query.with_entities(StockEntity.symbol).all()
 
     @classmethod
     def update(cls, portfolio: Tuple[Union[str, None], ...]) -> NoReturn:
-        for ticker in portfolio:
+        for symbol in portfolio:
             stock: StockEntity = StockEntity()
-            Utils.set_attributes(stock, ticker=ticker, isin=StockBO.isin(ticker))
+            Utils.set_attributes(stock, symbol=symbol, isin=StockBO.isin(symbol))
             cls.persist(stock)

@@ -1,6 +1,6 @@
 import multiprocessing
 from multiprocessing.context import Process
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional, Final
 
 from src.bo.forward_bo import ForwardBO
 from src.bo.intraday_bo import IntradayBO
@@ -12,8 +12,8 @@ from src.dao.stock_dao import StockDAO
 
 
 class ProcessManager:
-    TARGET: str = 'target'
-    ARGS: str = 'args'
+    TARGET: Final[str] = 'target'
+    ARGS: Final[str] = 'args'
 
     CONFIGURATION: Dict[str, Dict[str, Tuple[Any, ...]]] = {
         'init-database': {

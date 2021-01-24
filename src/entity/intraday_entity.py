@@ -12,4 +12,4 @@ class IntradayEntity(db.Model):
     low = db.Column(db.DECIMAL)
     close = db.Column(db.DECIMAL)
     volume = db.Column(db.DECIMAL)
-    ticker = db.Column(db.String(10), db.ForeignKey(StockEntity.ticker), nullable=False, index=True, primary_key=True)
+    symbol = db.Column(db.String(10), db.ForeignKey(StockEntity.symbol), nullable=False, index=True, primary_key=True)

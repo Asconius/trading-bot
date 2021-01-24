@@ -17,7 +17,7 @@ class MainTestCase(TestCase):
     @parameterized.expand([
         ('/', 200),
         ('/stock', 200),
-        ('/stock/intraday/ticker', 200),
+        ('/stock/intraday/symbol', 200),
         ('/intraday', 200),
         ('/evaluation', 200),
         ('/forward', 200),

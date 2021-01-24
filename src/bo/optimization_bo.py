@@ -1,8 +1,7 @@
 import copy
 from decimal import Decimal
+from random import choice
 from typing import Tuple, List, NoReturn
-
-from pandas import DataFrame
 
 from src.bo.analyser_bo import AnalyserBO
 from src.bo.broker_bo import BrokerBO
@@ -16,7 +15,9 @@ from src.dao.evaluation_dao import EvaluationDAO
 from src.dao.intraday_dao import IntradayDAO
 from src.dto.attempt_dto import AttemptDTO
 from src.entity.evaluation_entity import EvaluationEntity
+from src.entity.intraday_entity import IntradayEntity
 from src.enums.configuration_enum import ConfigurationEnum
+from src.enums.strategy_enum import StrategyEnum
 from src.utils.utils import Utils
 
 
@@ -24,10 +25,10 @@ from src.utils.utils import Utils
 class OptimizationBO:
 
     @staticmethod
-    def optimise(tables: List[DataFrame]) -> NoReturn:
+    def optimise(tables: List[List[IntradayEntity]], strategy: StrategyEnum) -> NoReturn:
         cash: Decimal = ConfigurationDAO.read_filter_by_identifier(ConfigurationEnum.OPTIMIZATION_CASH.identifier).value
         fee: Decimal = ConfigurationDAO.read_filter_by_identifier(ConfigurationEnum.OPTIMIZATION_FEE.identifier).value
-        evaluation: EvaluationEntity = EvaluationDAO.read_order_by_sum()
+        evaluation: EvaluationEntity = EvaluationDAO.read_filter_by_strategy_order_by_sum(strategy)
         if evaluation is None:
             attempt: AttemptDTO = AttemptDTO()
             optimise_sum: Decimal = cash * len(tables)
@@ -52,7 +53,8 @@ class OptimizationBO:
                         zip(start_tuple, evaluation_attempt.__dict__.values(), stop_tuple)]):
                 continue
 
-            evaluation: EvaluationEntity = EvaluationDAO.read_attempt(evaluation_attempt)
+            evaluation: EvaluationEntity = EvaluationDAO.read_filter_by_strategy_and_attempt(
+                strategy, evaluation_attempt)
             if evaluation is None:
                 break
 
@@ -68,13 +70,14 @@ class OptimizationBO:
             evaluation_sum += broker.funds()
             analysis_funds.append(broker.funds().normalize())
             if analysis_number == table_number and evaluation_sum > optimise_sum:
-                EvaluationDAO.create(evaluation_sum, ','.join(map(str, analysis_funds)), evaluation_attempt)
+                EvaluationDAO.create(evaluation_sum, ','.join(map(str, analysis_funds)), evaluation_attempt, strategy)
 
     @classmethod
     def start(cls, portfolio: List[str], number: int, group_number: int) -> NoReturn:
         group_size: int = int(number / group_number)
         groups: Tuple[Tuple[str]] = Utils.group(group_size, portfolio[:number])
-        cls.optimise(IntradayDAO.dataframe_group(groups))
+        strategy: StrategyEnum = choice(list(StrategyEnum))
+        cls.optimise(IntradayDAO.intraday_list_group(groups), strategy)
 
 
 if __name__ == '__main__':

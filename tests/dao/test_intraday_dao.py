@@ -33,27 +33,27 @@ class IntradayDAOTestCase(BaseTestCase):
                 }
         frame = pd.DataFrame(data)
         for index, row in frame.iterrows():
-            intraday = IntradayDAO.init(row, 'IBM', UTC)
+            intraday = IntradayDAO.init(row, 'AAA', UTC)
             self.assertIsInstance(intraday, IntradayEntity)
             self.assert_attributes(intraday, date=pytz.utc.localize(datetime.fromisoformat(row['date'])),
                                    open=Decimal(row['1. open']), high=Decimal(row['2. high']),
                                    low=Decimal(row['3. low']), close=Decimal(row['4. close']),
-                                   volume=Decimal(row['5. volume']), ticker='IBM')
+                                   volume=Decimal(row['5. volume']), symbol='AAA')
 
     def test_localize(self):
         date = datetime.fromisoformat('2011-11-04T00:00:00')
         eastern = pytz.timezone(US_EASTERN).localize(date)
         intraday = IntradayEntity()
         Utils.set_attributes(intraday, date=eastern, open=Decimal('1'), high=Decimal('1'), low=Decimal('1'),
-                             close=Decimal('1'), volume=1, ticker='AAA')
+                             close=Decimal('1'), volume=Decimal('1'), symbol='AAA')
         BaseDAO.persist(intraday)
-        intraday = IntradayDAO.read_filter_by_ticker_first('AAA')
+        intraday = IntradayDAO.read_filter_by_symbol_first('AAA')
         self.__assert_date(eastern, intraday, date)
 
     def test_eastern_utc(self):
         date = datetime.fromisoformat('2011-11-04T00:00:00')
         self.persist_intraday('AAA', date, Decimal('1'), Decimal('1'), Decimal('1'), Decimal('1'), Decimal('1'))
-        intraday = IntradayDAO.read_filter_by_ticker_first('AAA')
+        intraday = IntradayDAO.read_filter_by_symbol_first('AAA')
         eastern = pytz.timezone(US_EASTERN).localize(date)
         self.__assert_date(eastern, intraday, date)
 
@@ -64,27 +64,12 @@ class IntradayDAOTestCase(BaseTestCase):
         self.assertEqual(intraday.date.astimezone(pytz.timezone(US_EASTERN)), eastern)
 
     @patch('alpha_vantage.timeseries.TimeSeries.get_intraday')
-    def test_create_ticker(self, intraday):
+    def test_create_symbol(self, intraday):
         intraday.return_value = self.get_intraday()
         with patch('alpha_vantage.timeseries.TimeSeries.__init__', return_value=None):
-            IntradayDAO.create_ticker('AAA')
+            IntradayDAO.create_symbol('AAA')
         rows = IntradayDAO.read_order_by_date_asc()
         self.assertEqual(len(rows), 10)
         date = pytz.utc.localize(datetime.fromisoformat('2000-01-01T05:00:00'))
         self.assert_attributes(rows[0], date=date, open=Decimal('500'), high=Decimal('500'), low=Decimal('500'),
-                               close=Decimal('500'), volume=Decimal('500'), ticker='AAA')
-
-    def test_dataframe(self):
-        young_date = pytz.utc.localize(datetime.fromisoformat('2011-11-04T00:00:00'))
-        old_date = pytz.utc.localize(datetime.fromisoformat('2011-11-03T00:00:00'))
-        dates = (young_date, old_date, young_date)
-        tickers = ('AAA', 'AAA', 'BBB')
-        intradays = []
-        for date, ticker in zip(dates, tickers):
-            intraday = IntradayEntity()
-            Utils.set_attributes(intraday, date=date, close=Decimal(1), ticker=ticker)
-            intradays.append(intraday)
-        frame = IntradayDAO.dataframe(intradays)
-        for i in range(frame.shape[0]):
-            for j in range(frame.shape[1]):
-                self.assertIsInstance(frame.iloc[i][j], Decimal)
+                               close=Decimal('500'), volume=Decimal('500'), symbol='AAA')
