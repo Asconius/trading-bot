@@ -3,8 +3,8 @@ from unittest import TestCase
 
 from parameterized import parameterized
 
-from src import main, db
-from src.bo.configuration_bo import ConfigurationBO
+from tradingbot import main, db
+from tradingbot.bo.configuration_bo import ConfigurationBO
 
 
 class MainTestCase(TestCase):

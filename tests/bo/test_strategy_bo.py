@@ -1,9 +1,9 @@
 from decimal import Decimal
 
-from src.bo.strategy_bo import StrategyBO
-from src.dto.attempt_dto import AttemptDTO
-from src.enums.action_enum import ActionEnum
 from tests.base_test_case import BaseTestCase
+from tradingbot.bo.strategy_bo import StrategyBO
+from tradingbot.dto.attempt_dto import AttemptDTO
+from tradingbot.enums.action_enum import ActionEnum
 
 
 class StrategyBOTestCase(BaseTestCase):

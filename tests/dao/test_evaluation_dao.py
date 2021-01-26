@@ -4,12 +4,12 @@ from unittest.mock import patch
 
 import pytz
 
-from src import db
-from src.dao.evaluation_dao import EvaluationDAO
-from src.dto.attempt_dto import AttemptDTO
-from src.entity.evaluation_entity import EvaluationEntity
-from src.enums.strategy_enum import StrategyEnum
 from tests.base_test_case import BaseTestCase
+from tradingbot import db
+from tradingbot.dao.evaluation_dao import EvaluationDAO
+from tradingbot.dto.attempt_dto import AttemptDTO
+from tradingbot.entity.evaluation_entity import EvaluationEntity
+from tradingbot.enums.strategy_enum import StrategyEnum
 
 
 class EvaluationDAOTestCase(BaseTestCase):
@@ -20,7 +20,7 @@ class EvaluationDAOTestCase(BaseTestCase):
     def setUpClass(cls):
         db.create_all()
 
-    @patch('src.utils.utils.Utils.now')
+    @patch('tradingbot.utils.utils.Utils.now')
     def setUp(self, now):
         self.truncate_tables()
         self.attempt = AttemptDTO(Decimal('1'), Decimal('2'), Decimal('3'), Decimal('4'), Decimal('5'), Decimal('6'))

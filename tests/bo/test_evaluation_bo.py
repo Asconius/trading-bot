@@ -4,12 +4,12 @@ from unittest.mock import patch
 
 from pandas import date_range
 
-from src import db
-from src.bo.evaluation_bo import EvaluationBO
-from src.dao.evaluation_dao import EvaluationDAO
-from src.dto.attempt_dto import AttemptDTO
-from src.enums.strategy_enum import StrategyEnum
 from tests.base_test_case import BaseTestCase
+from tradingbot import db
+from tradingbot.bo.evaluation_bo import EvaluationBO
+from tradingbot.dao.evaluation_dao import EvaluationDAO
+from tradingbot.dto.attempt_dto import AttemptDTO
+from tradingbot.enums.strategy_enum import StrategyEnum
 
 
 class EvaluationBOTestCase(BaseTestCase):
@@ -18,7 +18,7 @@ class EvaluationBOTestCase(BaseTestCase):
     def setUpClass(cls):
         db.create_all()
 
-    @patch('src.utils.utils.Utils.now')
+    @patch('tradingbot.utils.utils.Utils.now')
     def setUp(self, now):
         self.truncate_tables()
         dates = date_range('1/1/2000', periods=5)

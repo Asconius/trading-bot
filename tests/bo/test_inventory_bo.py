@@ -1,7 +1,7 @@
 from decimal import Decimal
 from unittest import TestCase
 
-from src.bo.inventory_bo import InventoryBO
+from tradingbot.bo.inventory_bo import InventoryBO
 
 
 class InventoryBOTestCase(TestCase):

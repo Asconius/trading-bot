@@ -1,8 +1,8 @@
-from src.converter.attempt_dto_converter import AttemptDTOConverter
-from src.dto.attempt_dto import AttemptDTO
-from src.entity.evaluation_entity import EvaluationEntity
-from src.utils.utils import Utils
 from tests.base_test_case import BaseTestCase
+from tradingbot import Utils
+from tradingbot.converter.attempt_dto_converter import AttemptDTOConverter
+from tradingbot.dto.attempt_dto import AttemptDTO
+from tradingbot.entity.evaluation_entity import EvaluationEntity
 
 
 class AttemptDTOConverterTestCase(BaseTestCase):

@@ -6,13 +6,13 @@ from unittest.mock import MagicMock
 import pytz
 from pytz import utc
 
-from src import db, Utils
-from src.converter.intraday_entity_converter import IntradayEntityConverter
-from src.dao.base_dao import BaseDAO
-from src.dao.intraday_dao import IntradayDAO
-from src.entity.intraday_entity import IntradayEntity
-from src.entity.stock_entity import StockEntity
 from tests.base_test_case import BaseTestCase
+from tradingbot import db, Utils
+from tradingbot.converter.intraday_entity_converter import IntradayEntityConverter
+from tradingbot.dao.base_dao import BaseDAO
+from tradingbot.dao.intraday_dao import IntradayDAO
+from tradingbot.entity.intraday_entity import IntradayEntity
+from tradingbot.entity.stock_entity import StockEntity
 
 
 class IntradayEntityConverterCase(BaseTestCase):

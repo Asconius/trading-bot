@@ -21,7 +21,7 @@ RUN mkdir /app/database
 RUN touch /app/database/tradingbot.db
 
 COPY start.py /app/start.py
-COPY src /app/src
+COPY src/tradingbot /app/src
 COPY templates /app/templates
 
 ENV FLASK_APP=src/main.py

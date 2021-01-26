@@ -1,7 +1,7 @@
 from decimal import Decimal
 
-from src.dto.attempt_dto import AttemptDTO
 from tests.base_test_case import BaseTestCase
+from tradingbot.dto.attempt_dto import AttemptDTO
 
 
 class AttemptDTOTestCase(BaseTestCase):

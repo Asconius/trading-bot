@@ -1,15 +1,15 @@
 from decimal import Decimal
 from unittest.mock import patch
 
-from src import db
-from src.bo.configuration_bo import ConfigurationBO
-from src.bo.optimization_bo import OptimizationBO
-from src.common.constants import ZERO
-from src.dao.evaluation_dao import EvaluationDAO
-from src.dto.attempt_dto import AttemptDTO
-from src.entity.evaluation_entity import EvaluationEntity
-from src.enums.strategy_enum import StrategyEnum
 from tests.base_test_case import BaseTestCase
+from tradingbot import db
+from tradingbot.bo.configuration_bo import ConfigurationBO
+from tradingbot.bo.optimization_bo import OptimizationBO
+from tradingbot.common.constants import ZERO
+from tradingbot.dao.evaluation_dao import EvaluationDAO
+from tradingbot.dto.attempt_dto import AttemptDTO
+from tradingbot.entity.evaluation_entity import EvaluationEntity
+from tradingbot.enums.strategy_enum import StrategyEnum
 
 
 class OptimizationBOTestCase(BaseTestCase):
@@ -22,8 +22,8 @@ class OptimizationBOTestCase(BaseTestCase):
         self.truncate_tables()
         ConfigurationBO.init()
 
-    @patch('src.utils.utils.Utils.negation')
-    @patch('src.utils.utils.Utils.inverse')
+    @patch('tradingbot.utils.utils.Utils.negation')
+    @patch('tradingbot.utils.utils.Utils.inverse')
     def test_optimise(self, negation, inverse):
         negation.return_value = ZERO
         inverse.return_value = ZERO
@@ -35,9 +35,9 @@ class OptimizationBOTestCase(BaseTestCase):
                                amount_sell=Decimal('1000'), delta_buy=Decimal('1.5'), delta_sell=Decimal('1.5'),
                                distance_buy=Decimal('30'), distance_sell=Decimal('30'))
 
-    @patch('src.bo.optimization_bo.choice')
-    @patch('src.utils.utils.Utils.negation')
-    @patch('src.utils.utils.Utils.inverse')
+    @patch('tradingbot.bo.optimization_bo.choice')
+    @patch('tradingbot.utils.utils.Utils.negation')
+    @patch('tradingbot.utils.utils.Utils.inverse')
     def test_start(self, inverse, negation, choice):
         negation.return_value = Decimal('1')
         inverse.return_value = Decimal('1')

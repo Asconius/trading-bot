@@ -5,13 +5,13 @@ from unittest.mock import patch
 import pandas as pd
 import pytz
 
-from src import db
-from src.common.constants import US_EASTERN, UTC
-from src.dao.base_dao import BaseDAO
-from src.dao.intraday_dao import IntradayDAO
-from src.entity.intraday_entity import IntradayEntity
-from src.utils.utils import Utils
 from tests.base_test_case import BaseTestCase
+from tradingbot import Utils
+from tradingbot import db
+from tradingbot.common.constants import US_EASTERN, UTC
+from tradingbot.dao.base_dao import BaseDAO
+from tradingbot.dao.intraday_dao import IntradayDAO
+from tradingbot.entity.intraday_entity import IntradayEntity
 
 
 class IntradayDAOTestCase(BaseTestCase):

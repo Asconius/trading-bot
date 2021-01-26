@@ -1,13 +1,13 @@
 from decimal import Decimal
 
-from src.bo.analyser_bo import AnalyserBO
-from src.bo.broker_bo import BrokerBO
-from src.bo.statistic_bo import StatisticBO
-from src.bo.strategy_bo import StrategyBO
-from src.common.constants import ZERO
-from src.dto.attempt_dto import AttemptDTO
-from src.enums.action_enum import ActionEnum
 from tests.base_test_case import BaseTestCase
+from tradingbot.bo.analyser_bo import AnalyserBO
+from tradingbot.bo.broker_bo import BrokerBO
+from tradingbot.bo.statistic_bo import StatisticBO
+from tradingbot.bo.strategy_bo import StrategyBO
+from tradingbot.common.constants import ZERO
+from tradingbot.dto.attempt_dto import AttemptDTO
+from tradingbot.enums.action_enum import ActionEnum
 
 
 class AnalyserBOTestCase(BaseTestCase):

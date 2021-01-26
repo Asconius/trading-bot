@@ -8,16 +8,16 @@ from numpy import full
 from pandas import DataFrame, date_range
 from pytz import timezone
 
-from src import Utils
-from src.common.constants import US_EASTERN, NAN
-from src.dao.base_dao import BaseDAO
-from src.dao.intraday_dao import IntradayDAO
-from src.entity.configuration_entity import ConfigurationEntity
-from src.entity.evaluation_entity import EvaluationEntity
-from src.entity.forward_entity import ForwardEntity
-from src.entity.intraday_entity import IntradayEntity
-from src.entity.portfolio_entity import PortfolioEntity
-from src.entity.stock_entity import StockEntity
+from tradingbot import Utils
+from tradingbot.common.constants import US_EASTERN, NAN
+from tradingbot.dao.base_dao import BaseDAO
+from tradingbot.dao.intraday_dao import IntradayDAO
+from tradingbot.entity.configuration_entity import ConfigurationEntity
+from tradingbot.entity.evaluation_entity import EvaluationEntity
+from tradingbot.entity.forward_entity import ForwardEntity
+from tradingbot.entity.intraday_entity import IntradayEntity
+from tradingbot.entity.portfolio_entity import PortfolioEntity
+from tradingbot.entity.stock_entity import StockEntity
 
 
 class BaseTestCase(TestCase):

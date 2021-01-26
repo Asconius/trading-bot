@@ -1,21 +1,22 @@
 import math
 import os
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from unittest.mock import patch, ANY
 
 import pytz
 from numpy import std, mean
 from pandas import date_range, DataFrame
 
-from src.common.constants import ZERO
-from src.converter.intraday_entity_converter import IntradayEntityConverter
-from src.dto.attempt_dto import AttemptDTO
-from src.utils.utils import Utils
 from tests.base_test_case import BaseTestCase
+from tradingbot import Utils
+from tradingbot.common.constants import ZERO
+from tradingbot.converter.intraday_entity_converter import IntradayEntityConverter
+from tradingbot.dto.attempt_dto import AttemptDTO
 
 
 class UtilsTestCase(BaseTestCase):
+
     def test_valid(self):
         valid = Utils.valid(Decimal('1'), Decimal('2'), Decimal('3'))
         self.assertEqual(valid, True)
@@ -51,14 +52,6 @@ class UtilsTestCase(BaseTestCase):
         number = Utils.number(ZERO, ZERO)
         self.assertEqual(number, ZERO)
 
-    def test_divide(self):
-        number = Utils.divide(Decimal('6.3'), Decimal('2.4'))
-        self.assertEqual(number, Decimal('2.625'))
-        number = Utils.divide(Decimal('9.2'), Decimal('2.9'))
-        self.assertEqual(number, Decimal('3.172413793103448275862068966'))
-        number = Utils.divide(ZERO, ZERO)
-        self.assertEqual(number, ZERO)
-
     def test_day_delta_value(self):
         dates = date_range('1/1/2000', periods=15, freq='8h')
         symbols = ['AAA']
@@ -77,7 +70,7 @@ class UtilsTestCase(BaseTestCase):
         value_aaa = Utils.day_delta_value(frame, date, Decimal('10'))
         self.assertTrue(math.isnan(value_aaa))
 
-    @patch('src.utils.utils.Utils.now')
+    @patch('tradingbot.utils.utils.Utils.now')
     def test_is_today(self, now):
         today = pytz.utc.localize(datetime.fromisoformat('2011-11-04T00:00:00'))
         now.return_value = today
@@ -92,7 +85,7 @@ class UtilsTestCase(BaseTestCase):
         self.assertFalse(Utils.is_today(today + timedelta(weeks=52)))
         self.assertFalse(Utils.is_today(None))
 
-    @patch('src.utils.utils.Utils.now')
+    @patch('tradingbot.utils.utils.Utils.now')
     def test_is_working_day_ny(self, now):
         now.return_value = pytz.utc.localize(datetime.fromisoformat('2019-07-05T12:00:00'))
         self.assertTrue(Utils.is_working_day_ny())
@@ -143,6 +136,13 @@ class UtilsTestCase(BaseTestCase):
 
     def test_normalize(self):
         intraday_list = self.create_intraday_list(decimal_list=[Decimal(i) for i in range(10)])
+        self.__assert_dataframe(intraday_list)
+
+    def test_normalize_divide_zero(self):
+        intraday_list = self.create_intraday_list(decimal_list=[Decimal(0) for _ in range(10)])
+        self.__assert_dataframe(intraday_list)
+
+    def __assert_dataframe(self, intraday_list):
         expected = IntradayEntityConverter.to_dataframe(intraday_list)
         actual = Utils.normalize(expected)
         standard = std(expected.values)
@@ -152,5 +152,9 @@ class UtilsTestCase(BaseTestCase):
             for j in range(actual.shape[1]):
                 self.assertEqual(actual.columns[j], expected.columns[j])
                 self.assertEqual(actual.index.values[i], expected.index.values[i])
-                normalized = (expected.iloc[i][j] - average) / standard
+                try:
+                    normalized = (expected.iloc[i][j] - average) / standard
+                except InvalidOperation:
+                    normalized = Decimal(0)
                 self.assertEqual(actual.iloc[i][j], normalized)
+                self.assertIsInstance(actual.iloc[i][j], Decimal)

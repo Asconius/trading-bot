@@ -6,19 +6,19 @@ from unittest.mock import patch
 import pytz
 from pandas import date_range
 
-from src import db
-from src.bo.configuration_bo import ConfigurationBO
-from src.bo.forward_bo import ForwardBO
-from src.bo.inventory_bo import InventoryBO
-from src.common.constants import ZERO
-from src.dao.evaluation_dao import EvaluationDAO
-from src.dao.forward_dao import ForwardDAO
-from src.dto.account_dto import AccountDTO
-from src.dto.attempt_dto import AttemptDTO
-from src.enums.action_enum import ActionEnum
-from src.enums.configuration_enum import ConfigurationEnum
-from src.enums.strategy_enum import StrategyEnum
 from tests.base_test_case import BaseTestCase
+from tradingbot import db
+from tradingbot.bo.configuration_bo import ConfigurationBO
+from tradingbot.bo.forward_bo import ForwardBO
+from tradingbot.bo.inventory_bo import InventoryBO
+from tradingbot.common.constants import ZERO, EMPTY
+from tradingbot.dao.evaluation_dao import EvaluationDAO
+from tradingbot.dao.forward_dao import ForwardDAO
+from tradingbot.dto.account_dto import AccountDTO
+from tradingbot.dto.attempt_dto import AttemptDTO
+from tradingbot.enums.action_enum import ActionEnum
+from tradingbot.enums.configuration_enum import ConfigurationEnum
+from tradingbot.enums.strategy_enum import StrategyEnum
 
 
 class ForwardBOTestCase(BaseTestCase):
@@ -42,11 +42,11 @@ class ForwardBOTestCase(BaseTestCase):
         self.truncate_tables()
         ConfigurationBO.init()
 
-    @patch('src.bo.forward_bo.choice')
-    @patch('src.utils.utils.Utils.send_mail')
-    @patch('src.utils.utils.Utils.is_today')
-    @patch('src.utils.utils.Utils.is_working_day_ny')
-    @patch('src.utils.utils.Utils.now')
+    @patch('tradingbot.bo.forward_bo.choice')
+    @patch('tradingbot.utils.utils.Utils.send_mail')
+    @patch('tradingbot.utils.utils.Utils.is_today')
+    @patch('tradingbot.utils.utils.Utils.is_working_day_ny')
+    @patch('tradingbot.utils.utils.Utils.now')
     def test_start(self, now, is_working_day_ny, is_today, send_mail, choice):
         is_today.return_value = False
         is_working_day_ny.return_value = True
@@ -56,7 +56,7 @@ class ForwardBOTestCase(BaseTestCase):
         ForwardDAO.create_buy('BBB', Decimal('100'), Decimal('10'), Decimal('7992.200000000001'),
                               StrategyEnum.COUNTER_CYCLICAL)
         now.return_value = self.YOUNG_DATE
-        EvaluationDAO.create(Decimal('40000'), '', AttemptDTO(), StrategyEnum.COUNTER_CYCLICAL)
+        EvaluationDAO.create(Decimal('40000'), EMPTY, AttemptDTO(), StrategyEnum.COUNTER_CYCLICAL)
         self.persist_default_intraday()
         ForwardBO.start(['AAA', 'BBB', 'CCC'])
         send_mail.assert_called_with(dumps(self.STATISTIC_JSON, indent=4, sort_keys=True, default=str))
@@ -76,7 +76,7 @@ class ForwardBOTestCase(BaseTestCase):
                                number=Decimal('10'), price=Decimal('100'), symbol='CCC',
                                strategy=StrategyEnum.COUNTER_CYCLICAL)
 
-    @patch('src.utils.utils.Utils.now')
+    @patch('tradingbot.utils.utils.Utils.now')
     def test_init(self, now):
         prices = (Decimal('20'), Decimal('30'), Decimal('40'), Decimal('50'), Decimal('60'), Decimal('70'))
         numbers = (Decimal('10'), Decimal('10'), Decimal('10'), Decimal('5'), Decimal('10'), Decimal('10'))
@@ -128,7 +128,7 @@ class ForwardBOTestCase(BaseTestCase):
         self.assertEqual(total_value, estimated)
         self.assertEqual(total, estimated + ConfigurationEnum.FORWARD_CASH.val)
 
-    @patch('src.utils.utils.Utils.now')
+    @patch('tradingbot.utils.utils.Utils.now')
     def test_group_by_strategy(self, now):
         dates = date_range('1/1/2000', periods=2)
         for i in range(len(dates)):
@@ -145,7 +145,7 @@ class ForwardBOTestCase(BaseTestCase):
         for evaluation in grouped[StrategyEnum.VOLUME_TRADING]:
             self.assertEqual(evaluation.strategy, StrategyEnum.VOLUME_TRADING)
 
-    @patch('src.utils.utils.Utils.now')
+    @patch('tradingbot.utils.utils.Utils.now')
     def test_get_account(self, now):
         dates = date_range('1/1/2000', periods=10)
         for i in range(len(dates)):

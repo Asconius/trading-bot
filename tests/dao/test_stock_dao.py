@@ -1,8 +1,8 @@
 from unittest.mock import patch
 
-from src import db
-from src.dao.stock_dao import StockDAO
 from tests.base_test_case import BaseTestCase
+from tradingbot import db
+from tradingbot.dao.stock_dao import StockDAO
 
 
 class StockDAOTestCase(BaseTestCase):
@@ -14,7 +14,7 @@ class StockDAOTestCase(BaseTestCase):
     def setUp(self):
         self.truncate_tables()
 
-    @patch('src.bo.stock_bo.StockBO.isin')
+    @patch('tradingbot.bo.stock_bo.StockBO.isin')
     def test_read_all(self, isin):
         isin.return_value = 'isin'
         StockDAO.update(('AAA',))
@@ -22,7 +22,7 @@ class StockDAOTestCase(BaseTestCase):
         self.assertEqual(result[0].symbol, 'AAA')
         self.assertEqual(result[0].isin, 'isin')
 
-    @patch('src.bo.stock_bo.StockBO.isin')
+    @patch('tradingbot.bo.stock_bo.StockBO.isin')
     def test_read_symbol(self, isin):
         isin.return_value = 'isin'
         portfolio = ('AAA',)
@@ -30,7 +30,7 @@ class StockDAOTestCase(BaseTestCase):
         result = StockDAO.read_symbol()
         self.assertEqual(result[0].symbol, 'AAA')
 
-    @patch('src.bo.stock_bo.StockBO.isin')
+    @patch('tradingbot.bo.stock_bo.StockBO.isin')
     def test_exception(self, isin):
         isin.return_value = 'isin'
         StockDAO.update((None,))
